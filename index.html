@@ -38,25 +38,30 @@
             const annualRate = parseFloat(document.getElementById('interest').value) / 100;
             const output = document.getElementById('output');
 
-            if (goal > 0 && monthly > 0) {
-                // If interest is 0, use simple math. If not, use compound formula.
-                if (annualRate === 0 || isNaN(annualRate)) {
-                    const months = Math.ceil(goal / monthly);
-                    output.innerHTML = `With 0% interest, it will take <span class="highlight">${months} months</span>.`;
-                    return;
-                }
+            // This is the "Formatter" that adds commas and the $ sign
+            const moneyFormatter = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                maximumFractionDigits: 0
+            });
 
-                const monthlyRate = annualRate / 12;
-                // Formula for Number of Periods for Future Value of Annuity
-                // n = log(1 + (FV * r / P)) / log(1 + r)
-                const months = Math.log(1 + (goal * monthlyRate / monthly)) / Math.log(1 + monthlyRate);
-                const totalMonths = Math.ceil(months);
+            if (goal > 0 && monthly > 0) {
+                let monthsToGoal;
                 
-                const years = Math.floor(totalMonths / 12);
-                const remainingMonths = totalMonths % 12;
+                if (annualRate === 0 || isNaN(annualRate)) {
+                    monthsToGoal = Math.ceil(goal / monthly);
+                } else {
+                    const monthlyRate = annualRate / 12;
+                    const months = Math.log(1 + (goal * monthlyRate / monthly)) / Math.log(1 + monthlyRate);
+                    monthsToGoal = Math.ceil(months);
+                }
                 
-                output.innerHTML = `With interest, you'll reach your goal in <span class="highlight">${totalMonths} months</span>.<br><br>` +
-                                 `That is <strong>${years} year(s) and ${remainingMonths} month(s)</strong>`;
+                const years = Math.floor(monthsToGoal / 12);
+                const remainingMonths = monthsToGoal % 12;
+                
+                // We use moneyFormatter.format(goal) to turn 10000 into $10,000
+                output.innerHTML = `To reach <span class="highlight">${moneyFormatter.format(goal)}</span>, it will take <span class="highlight">${monthsToGoal} months</span>.<br><br>` +
+                                 `That is <strong>${years} year(s) and ${remainingMonths} month(s)</strong>.`;
             } else {
                 output.innerHTML = "Enter a goal and monthly amount!";
             }
