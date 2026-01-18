@@ -1,6 +1,106 @@
-<div class="manual-control-wrapper" style="display: flex; align-items: center; margin-bottom: 15px;">
-    <input type="checkbox" id="manualMode" onchange="toggleManual()" style="width: auto; margin-right: 10px; cursor: pointer;">
-    <label for="manualMode" style="font-size: 0.85rem; font-weight: bold; color: var(--secondary); cursor: pointer; display: flex; align-items: center;">
-        🛠️ Manual Exchange Rate
-    </label>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Savings Growth Pro</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background-color: #f4f7f6; display: flex; justify-content: center; }
+        .box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { color: #2c3e50; margin-top: 0; text-align: center; }
+        label { font-weight: bold; display: block; margin-top: 15px; color: #555; font-size: 14px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; -webkit-appearance: none; }
+        button { width: 100%; padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        button:active { background-color: #0056b3; }
+        #output { margin-top: 25px; font-size: 17px; color: #333; line-height: 1.6; border-top: 1px solid #eee; padding-top: 15px; min-height: 50px; }
+        .highlight { color: #28a745; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>📈 Growth Calculator</h2>
+        
+        <label>Starting Balance ($)</label>
+        <input type="text" id="starting" inputmode="numeric" placeholder="0" oninput="formatBox(this)">
+
+        <label>Savings Goal ($)</label>
+        <input type="text" id="goal" inputmode="numeric" placeholder="10,000" oninput="formatBox(this)">
+        
+        <label>Monthly Contribution ($)</label>
+        <input type="text" id="monthly" inputmode="numeric" placeholder="500" oninput="formatBox(this)">
+        
+        <label>Annual Interest Rate (%)</label>
+        <input type="number" id="interest" placeholder="5" step="0.1">
+        
+        <button onclick="calculate()">Calculate Growth</button>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        function formatBox(input) {
+            let value = input.value.replace(/\D/g, "");
+            if (value !== "") {
+                input.value = Number(value).toLocaleString();
+            }
+        }
+
+        function calculate() {
+            try {
+                const startStr = document.getElementById('starting').value.replace(/,/g, "") || "0";
+                const goalStr = document.getElementById('goal').value.replace(/,/g, "") || "0";
+                const monthlyStr = document.getElementById('monthly').value.replace(/,/g, "") || "0";
+                
+                const startBal = parseFloat(startStr);
+                const goal = parseFloat(goalStr);
+                const monthly = parseFloat(monthlyStr);
+                const annualRate = parseFloat(document.getElementById('interest').value) / 100 || 0;
+                const output = document.getElementById('output');
+
+                const formatter = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    maximumFractionDigits: 0
+                });
+
+                if (goal <= startBal && goal > 0) {
+                    output.innerHTML = "You've already reached your goal! 🎉";
+                    return;
+                }
+
+                if (goal > 0 && (monthly > 0 || annualRate > 0)) {
+                    let monthsToGoal;
+                    
+                    if (annualRate <= 0) {
+                        monthsToGoal = Math.ceil((goal - startBal) / monthly);
+                    } else {
+                        const r = annualRate / 12;
+                        const P = monthly;
+                        const FV = goal;
+                        const PV = startBal;
+                        
+                        // Formula for time with compound interest
+                        const n = Math.log((FV * r + P) / (PV * r + P)) / Math.log(1 + r);
+                        monthsToGoal = Math.ceil(n);
+                    }
+                    
+                    if (monthsToGoal < 0 || isNaN(monthsToGoal)) {
+                        output.innerHTML = "Goal is mathematically unreachable with these numbers.";
+                        return;
+                    }
+
+                    const years = Math.floor(monthsToGoal / 12);
+                    const remainingMonths = monthsToGoal % 12;
+                    
+                    output.innerHTML = `To reach <span class="highlight">${formatter.format(goal)}</span>, it will take <span class="highlight">${monthsToGoal} months</span>.<br><br>` +
+                                     `That is <strong>${years} year(s) and ${remainingMonths} month(s)</strong>.`;
+                } else {
+                    output.innerHTML = "Please enter your goal and a monthly amount.";
+                }
+            } catch (err) {
+                document.getElementById('output').innerHTML = "Something went wrong. Check your numbers!";
+            }
+        }
+    </script>
+</body>
+</html>
+
